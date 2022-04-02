@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@700&display=swap" rel="stylesheet"> 
+    <title>SpotifyLink 🔗</title>
+</head>
+<body>
+    <div class="center" id="main">
+        <h1 class="huge light">Room {{roomName}}</h1>
+        <img height=250 id="albumcover" src="https://i.scdn.co/image/ab67616d0000b273f8f9b9b9b8f9c8f9c8f9b9b9" alt="Waiting to play a song..." class="album-cover"><br>
+        <h2 class="moderately-large light" id="title">Play a Song!</h2>
+        <h2 class="kinda-large gray" id="artist"></h2>
+        <input type="text" placeholder="Song Name" id="songurl">
+        <button onclick="setSong()">Play Song</button><br><br>
+        <input type="range" id="audio-slider" min="0" value="0" step="1" onchange="seek()">
+
+
+    </div>
+</body>
+</html>
+<style>
+* {
+    font-family: 'Lato', sans-serif;
+}
+body {
+    background-color: #2E4052;
+}
+.light { 
+    color: #fff;
+}
+.center {
+  text-align: center;
+}
+.huge { 
+    font-size: 100px;
+}
+.moderately-large {
+    font-size: 50px;
+}
+.kinda-large {
+    font-size: 30px;
+}
+.gray {
+    color: #828282;
+}
+</style>
+
+<script>
+var audio = new Audio()
+const audioSlider = document.getElementById("audio-slider");
+
+function setSong() {
+    var songUrl = document.getElementById("songurl").value;
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = newSongHandler;
+    xhttp.open("GET", "/api/setSong?room={{roomName}}&song=" + songUrl, true);
+    xhttp.send();
+}
+
+//sync the slider handle with the currentTime
+setInterval(updateSongSlider, 1000);
+function updateSongSlider(){
+    var c = Math.round(audio.currentTime);
+    audioSlider.value = c;
+    
+    var d = audio.duration
+    audioSlider.setAttribute("max", d);
+    
+}
+
+//set the currentTime to match users click on the progress bar
+function seek(){		 
+    audio.currentTime = audioSlider.value;			
+    play();	
+}
+
+setInterval(getSong, 3000);
+function getSong(){
+    var songUrl = document.getElementById("songurl").value;
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = newSongHandler;
+    xhttp.open("GET", "/api/getSong?room={{roomName}}", true);
+    xhttp.send();
+}
+
+function newSongHandler() {
+        if (this.readyState == 4 && this.status == 200) {
+            var songData = JSON.parse(this.responseText);
+            if (songData.data == 'none')
+                return
+            if (songData.songUrl != audio.src) { 
+
+                document.getElementById("albumcover").src = songData.thumbnail;
+                document.getElementById("title").innerHTML = songData.title;
+                document.getElementById("artist").innerHTML = songData.artist;
+
+                // play a song in the background with the song data "audio"
+                audio.src = songData.songUrl;
+                audio.load();
+                audio.play();
+            }
+        }
+    }
+
+</script>
