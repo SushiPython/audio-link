@@ -1,13 +1,15 @@
-const express = require('express')
-const app = express()
 const nunjucks = require('nunjucks')
-const http = require('http').Server(app);
-const io = require('socket.io')(http);
+const express = require('express');
+const app = express();
+const http = require('http');
+const server = http.createServer(app);
+const { Server } = require("socket.io");
+const io = new Server(server);
 
 
 const rooms = require('./rooms')
 const youtube = require('./youtube')
-const utils = require('./utils')
+const utils = require('./utils');
 
 
 
@@ -76,6 +78,14 @@ app.get('/api/setSong', (req, res) => {
             }
 
 
+            // swap algorithm for artist and title if they're backwards
+            if (songArtist.toLowerCase().includes("official") || songArtist.toLowerCase().includes("audio")) {
+                let temp = songArtist
+                songArtist = songTitle
+                songTitle = temp
+            }
+
+
 
             // remove all data after the parentheses and Topic
             songTitle = songTitle.split(" (")[0];
@@ -102,13 +112,86 @@ app.get('/api/setSong', (req, res) => {
 app.get('/api/getSong', (req, res) => {
     let room = req.query.room
     let data = rooms.getRoom(room)
-    if (!data) 
-        return res.send({"err": "no song playing"})
-    else 
-        return res.send(data.currentSong);
+    console.log(data)
+    res.send(data)
 })
 
+io.on('connection', (socket) => {
 
-http.listen(8080, function() {
+    console.log('a user connected');
+
+
+    socket.on('disconnect', () => {
+      console.log('user disconnected');
+    });
+
+    socket.on('join', (data) => {
+        console.log(data.room)
+        socket.join(data.room)
+        rooms.newMember(data.room, socket)
+        
+    })
+
+    socket.on('setSong', (data) => {
+        let song = data.song
+        let room = data.room
+        youtube.searchYoutube(song + " audio")
+        .then(results => {
+            youtube.getSongData(results[0].url)
+            .then(data => {
+                let audioFormats = youtube.getAudioFormats(data);
+    
+                // split song.Data into title and artist
+                if (data.videoDetails.title.split(" - ").length < 2) {
+                    songTitle = data.videoDetails.title
+                    songArtist = '(Maybe) ' + data.videoDetails.ownerChannelName;
+                } else if (data.videoDetails.title.includes(" by ")) {
+                    var songTitle = data.videoDetails.title.split(" by ")[0];
+                    var songArtist = data.videoDetails.title.split(" by ")[1];
+                }  else if (data.videoDetails.title.includes(" By ")) {
+                    var songTitle = data.videoDetails.title.split(" By ")[0];
+                    var songArtist = data.videoDetails.title.split(" By ")[1];
+                } else {
+                    var songTitle = data.videoDetails.title.split(" - ")[1];
+                    var songArtist = data.videoDetails.title.split(" - ")[0];
+                }
+    
+    
+                // swap algorithm for artist and title if they're backwards
+                if (songArtist.toLowerCase().includes("official") || songArtist.toLowerCase().includes("audio")) {
+                    let temp = songArtist
+                    songArtist = songTitle
+                    songTitle = temp
+                }
+    
+    
+    
+                // remove all data after the parentheses and Topic
+                songTitle = songTitle.split(" (")[0];
+                songArtist = songArtist.split(" (")[0].split(" - Topic")[0];
+                
+    
+                // return the data
+                output = {
+                    "thumbnail": data.videoDetails.thumbnails[data.videoDetails.thumbnails.length-1].url,
+                    "title": songTitle,
+                    "uploader": data.videoDetails.ownerChannelName,
+                    "songUrl": audioFormats[0].url,
+                    "artist": songArtist 
+                }
+                rooms.setSong(room, output)
+                console.log(socket.id)
+                //socket.broadcast.to(socket.id).emit('newSong', output)
+                //socket.in(room).emit('newSong', output)
+                socket.to(room).emit('newSong', output)
+                socket.emit('newSong', output)
+            })
+        })
+    })
+
+});
+
+
+server.listen(8080, function() {
     console.log('listening on *:8080');
  });

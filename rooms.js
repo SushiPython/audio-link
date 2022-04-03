@@ -4,7 +4,8 @@ rooms = {}
 var createRoom = (roomName) => {
     rooms[roomName] = {
         name: roomName,
-        currentSong: {'data':'none'}
+        currentSong: {'data':'none'},
+        members: []
     }
     console.log(rooms)
 }
@@ -15,14 +16,18 @@ var getRoom = (roomName) => {
 }
 
 var setSong = (roomName, songData) => {
-    console.log(roomName)
-    console.log('room info: ' + rooms[roomName])
     rooms[roomName].currentSong = songData;
 }
+
+var newMember = (roomName, socket) => {
+    rooms[roomName].members.push(socket.id)
+}
+
 
 // exports
 module.exports = {
     createRoom,
     getRoom,
-    setSong
+    setSong,
+    newMember
 }

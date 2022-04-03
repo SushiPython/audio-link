@@ -2,12 +2,8 @@
   "dependencies": {
     "express": "^4.17.3",
     "http": "^0.0.1-security",
-    "isomorphic-fetch": "^3.0.0",
-    "isomorphic-unfetch": "^3.1.0",
     "nunjucks": "^3.2.3",
-    "socketio": "^1.0.0",
-    "song-lyrics-api": "^1.1.0",
-    "spotify-url-info": "^3.0.4",
+    "socket.io": "^4.4.1",
     "youtube-search-without-api-key": "^1.0.7",
     "ytdl-core": "^4.11.0"
   }

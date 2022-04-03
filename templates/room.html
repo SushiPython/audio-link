@@ -62,7 +62,43 @@ document.getElementById('main').appendChild(iframe);
 const player = new playerjs.Player(iframe);
 
 
+// join socket server
+const socket = io('http://localhost:8080');
+
+
+socket.on('connect', function(){
+    console.log('connected');
+    socket.emit("join", {room: "{{roomName}}"});
+
+
+    // send request to /api/getSong to get the currently playing song
+    fetch('/api/getSong?room={{roomName}}', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log(data);
+        if (data.err || data.currentSong.data == "none") {
+            console.log('no song playing')
+        } else {
+            newSongHandler(data.currentSong);
+        }
+    })
+});
+
+socket.on('newSong', function(data) {
+    newSongHandler(data)
+})
+
+
+
 player.on('ready', () => {
+
+
+
   player.on('play', () => {
     console.log('play');
   });
@@ -83,49 +119,29 @@ player.on('ready', () => {
 
 function setSong() {
     var songUrl = document.getElementById("songurl").value;
-    var xhttp = new XMLHttpRequest();
-    xhttp.onreadystatechange = newSongHandler;
-    xhttp.open("GET", "/api/setSong?room={{roomName}}&song=" + songUrl, true);
-    xhttp.send();
+    socket.emit('setSong', {song: songUrl, room: "{{roomName}}"});
 }
 
 function pauseSong() {
-    var xhttp = new XMLHttpRequest();
-    xhttp.onreadystatechange = pauseSongHandler;
-    xhttp.open("GET", "/api/pauseSong?room={{roomName}}", true);
-    xhttp.send();
-}
-
-setInterval(getSong, 3000);
-function getSong(){
-    var songUrl = document.getElementById("songurl").value;
-    var xhttp = new XMLHttpRequest();
-    xhttp.onreadystatechange = newSongHandler;
-    xhttp.open("GET", "/api/getSong?room={{roomName}}", true);
-    xhttp.send();
+    socket.emit('pauseSong', {room: "{{roomName}}"});
 }
 
 
+function newSongHandler(songData) {
 
-function newSongHandler() {
-        if (this.readyState == 4 && this.status == 200) {
-            var songData = JSON.parse(this.responseText);
-            if (songData.data == 'none')
-                return
-            if (songData.songUrl != document.getElementById('ap').src) { 
+    if (songData.data == 'none')
+        return
 
-                document.getElementById("albumcover").src = songData.thumbnail;
-                document.getElementById("title").innerHTML = songData.title;
-                document.getElementById("artist").innerHTML = `${songData.artist}<br>Uploaded by ${songData.uploader}`;
+    if (songData.songUrl != document.getElementById('ap').src) { 
+        document.getElementById("albumcover").src = songData.thumbnail;
+        document.getElementById("title").innerHTML = songData.title;
+        document.getElementById("artist").innerHTML = `${songData.artist}<br>Uploaded by ${songData.uploader}`;
 
-                // play a song in the background with the song data "audio"
-                document.getElementById('ap').src = songData.songUrl;
-                player.play();
-
-
-
-            }
-        }
+        // play a song in the background with the song data "audio"
+        document.getElementById('ap').src = songData.songUrl;
+        player.play();
     }
+}
+
 
 </script>
