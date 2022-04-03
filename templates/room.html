@@ -55,9 +55,31 @@ body {
 const iframe = document.createElement('iframe');
 iframe.id = "ap"
 iframe.src = '';
+iframe.setAttribute('frameBorder', '0');
+iframe.setAttribute('height', '50px');
 document.getElementById('main').appendChild(iframe);
 
 const player = new playerjs.Player(iframe);
+
+
+player.on('ready', () => {
+  player.on('play', () => {
+    console.log('play');
+  });
+
+  player.on('pause', () => {
+    console.log('pause');
+  });
+
+  player.getDuration(duration => console.log(duration));
+
+  if (player.supports('method', 'mute')) {
+    player.mute();
+  }
+
+  player.play();
+});
+
 
 function setSong() {
     var songUrl = document.getElementById("songurl").value;
@@ -94,7 +116,7 @@ function newSongHandler() {
 
                 document.getElementById("albumcover").src = songData.thumbnail;
                 document.getElementById("title").innerHTML = songData.title;
-                document.getElementById("artist").innerHTML = songData.artist;
+                document.getElementById("artist").innerHTML = `${songData.artist}<br>Uploaded by ${songData.uploader}`;
 
                 // play a song in the background with the song data "audio"
                 document.getElementById('ap').src = songData.songUrl;

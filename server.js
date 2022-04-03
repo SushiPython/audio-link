@@ -59,11 +59,27 @@ app.get('/api/setSong', (req, res) => {
         youtube.getSongData(results[0].url)
         .then(data => {
             let audioFormats = youtube.getAudioFormats(data);
+            // split song.Data into title and artist
+            if (data.videoDetails.title.split(" - ").length < 2) {
+                songTitle = data.videoDetails.title
+                songArtist = '(Maybe) ' + data.videoDetails.ownerChannelName;
+            } else {
+                var songTitle = data.videoDetails.title.split(" - ")[1];
+                var songArtist = data.videoDetails.title.split(" - ")[0];
+            }
+
+            // remove all data after the parentheses and Topic
+            songTitle = songTitle.split(" (")[0];
+            songArtist = songArtist.split(" (")[0].split(" - Topic")[0];
+            
+
+            // return the data
             output = {
                 "thumbnail": data.videoDetails.thumbnails[data.videoDetails.thumbnails.length-1].url,
-                "title": data.videoDetails.title,
-                "artist": data.videoDetails.ownerChannelName,
-                "songUrl": audioFormats[0].url
+                "title": songTitle,
+                "uploader": data.videoDetails.ownerChannelName,
+                "songUrl": audioFormats[0].url,
+                "artist": songArtist 
             }
             rooms.setSong(room, output)
             res.send(output)
