@@ -7,6 +7,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@700&display=swap" rel="stylesheet"> 
+    <script type="text/javascript" src="//cdn.embed.ly/player-0.1.0.min.js"></script>
+    <script src="https://cdn.socket.io/4.4.1/socket.io.min.js" integrity="sha384-fKnu0iswBIqkjxrhQCTZ7qlLHOFEgNkRmK2vaO/LbTZSXdJfAu6ewRBdwHPhBo/H" crossorigin="anonymous"></script>
     <title>AudioLink 🔗</title>
 </head>
 <body>
@@ -17,7 +19,6 @@
         <h2 class="kinda-large gray" id="artist"></h2>
         <input type="text" placeholder="Song Name" id="songurl">
         <button onclick="setSong()">Play Song</button><br><br>
-        <input type="range" id="audio-slider" min="0" value="0" step="1" onchange="seek()">
 
 
     </div>
@@ -51,8 +52,12 @@ body {
 </style>
 
 <script>
-var audio = new Audio()
-const audioSlider = document.getElementById("audio-slider");
+const iframe = document.createElement('iframe');
+iframe.id = "ap"
+iframe.src = '';
+document.getElementById('main').appendChild(iframe);
+
+const player = new playerjs.Player(iframe);
 
 function setSong() {
     var songUrl = document.getElementById("songurl").value;
@@ -62,21 +67,11 @@ function setSong() {
     xhttp.send();
 }
 
-//sync the slider handle with the currentTime
-setInterval(updateSongSlider, 1000);
-function updateSongSlider(){
-    var c = Math.round(audio.currentTime);
-    audioSlider.value = c;
-    
-    var d = audio.duration
-    audioSlider.setAttribute("max", d);
-    
-}
-
-//set the currentTime to match users click on the progress bar
-function seek(){		 
-    audio.currentTime = audioSlider.value;			
-    play();	
+function pauseSong() {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = pauseSongHandler;
+    xhttp.open("GET", "/api/pauseSong?room={{roomName}}", true);
+    xhttp.send();
 }
 
 setInterval(getSong, 3000);
@@ -88,21 +83,25 @@ function getSong(){
     xhttp.send();
 }
 
+
+
 function newSongHandler() {
         if (this.readyState == 4 && this.status == 200) {
             var songData = JSON.parse(this.responseText);
             if (songData.data == 'none')
                 return
-            if (songData.songUrl != audio.src) { 
+            if (songData.songUrl != document.getElementById('ap').src) { 
 
                 document.getElementById("albumcover").src = songData.thumbnail;
                 document.getElementById("title").innerHTML = songData.title;
                 document.getElementById("artist").innerHTML = songData.artist;
 
                 // play a song in the background with the song data "audio"
-                audio.src = songData.songUrl;
-                audio.load();
-                audio.play();
+                document.getElementById('ap').src = songData.songUrl;
+                player.play();
+
+
+
             }
         }
     }

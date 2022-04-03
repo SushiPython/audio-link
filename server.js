@@ -1,7 +1,9 @@
 const express = require('express')
 const app = express()
 const nunjucks = require('nunjucks')
-const fs = require('fs');
+const http = require('http').Server(app);
+const io = require('socket.io')(http);
+
 
 const rooms = require('./rooms')
 const youtube = require('./youtube')
@@ -52,7 +54,7 @@ app.get('/room/:roomName', (req, res) => {
 app.get('/api/setSong', (req, res) => {
     let song = req.query.song
     let room = req.query.room
-    youtube.searchYoutube(song)
+    youtube.searchYoutube(song + " audio")
     .then(results => {
         youtube.getSongData(results[0].url)
         .then(data => {
@@ -82,7 +84,6 @@ app.get('/api/getSong', (req, res) => {
 })
 
 
-// start the app
-app.listen(8080, () => {
-    console.log(`Example app listening on port 8080`)
-})
+http.listen(8080, function() {
+    console.log('listening on *:8080');
+ });
