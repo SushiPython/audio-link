@@ -59,14 +59,23 @@ app.get('/api/setSong', (req, res) => {
         youtube.getSongData(results[0].url)
         .then(data => {
             let audioFormats = youtube.getAudioFormats(data);
+
             // split song.Data into title and artist
             if (data.videoDetails.title.split(" - ").length < 2) {
                 songTitle = data.videoDetails.title
                 songArtist = '(Maybe) ' + data.videoDetails.ownerChannelName;
+            } else if (data.videoDetails.title.includes(" by ")) {
+                var songTitle = data.videoDetails.title.split(" by ")[0];
+                var songArtist = data.videoDetails.title.split(" by ")[1];
+            }  else if (data.videoDetails.title.includes(" By ")) {
+                var songTitle = data.videoDetails.title.split(" By ")[0];
+                var songArtist = data.videoDetails.title.split(" By ")[1];
             } else {
                 var songTitle = data.videoDetails.title.split(" - ")[1];
                 var songArtist = data.videoDetails.title.split(" - ")[0];
             }
+
+
 
             // remove all data after the parentheses and Topic
             songTitle = songTitle.split(" (")[0];
