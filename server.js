@@ -23,7 +23,7 @@ nunjucks.configure('templates', {
 
 // handle home page
 app.get('/', (req, res) => {
-    res.render('index.html')
+    res.render('newindex.html')
 })
 
 // handle create-room page
@@ -46,7 +46,7 @@ app.get('/room/:roomName', (req, res) => {
         return
     }
 
-    res.render('room.html', {
+    res.render('newroom.html', {
         roomName,
         currentSong: room.currentSong
     })
